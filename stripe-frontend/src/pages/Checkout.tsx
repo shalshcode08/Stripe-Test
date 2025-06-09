@@ -1,10 +1,20 @@
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { StripeWallets } from "../components/StripeWallets";
+
 export const Checkout = () => {
+  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  if (!key) {
+    throw new Error("Missing Stripe publishable key");
+  }
+  const stripePromise = loadStripe(key);
+
   return (
     <div>
       <div className="flex justify-center items-center h-screen">
-        <h1 className="text-xl font-bold text-gray-800">
-          This is the Checkout page
-        </h1>
+        <Elements stripe={stripePromise}>
+            <StripeWallets />
+        </Elements>
       </div>
     </div>
   );
