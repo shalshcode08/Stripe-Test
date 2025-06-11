@@ -21,7 +21,7 @@ app.get("/secret", async (req, res) => {
         integration_check: "accept_a_payment",
       },
     });
-    console.log(paymentIntent);
+    console.log(paymentIntent); //->log
     res.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,

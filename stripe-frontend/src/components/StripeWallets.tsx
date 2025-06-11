@@ -12,7 +12,7 @@ export const StripeWallets = () => {
         method: "GET",
       });
       const { clientSecret } = await response.json();
-      console.log(clientSecret);
+      console.log(clientSecret); //->log
       return { clientSecret };
     } catch (error) {
       setLoading(false);
@@ -35,6 +35,8 @@ export const StripeWallets = () => {
         return_url: `${window.location.origin}/success`,
       });
 
+      console.log(error);//->log
+      
       if (error) {
         setLoading(false);
         console.error("Payment confirmation failed:", error);
