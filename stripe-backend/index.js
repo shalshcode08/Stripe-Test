@@ -11,19 +11,31 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 app.use(cors());
 app.use(express.json());
 
-app.post("/create-payment-intent", async (req, res) => {
-  const { payment_method } = req.body;
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: 999,
-    currency: "usd",
-    payment_method,
-    confirmation_method: "manual",
-    confirm: true,
-  });
-
-  res.send({ client_secret: paymentIntent.client_secret });
+app.get("/secret", async (req, res) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 1099,
+      currency: "usd",
+      payment_method_types: ["alipay"],
+      metadata: {
+        integration_check: "accept_a_payment",
+      },
+    });
+    console.log(paymentIntent);
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    });
+  } catch (error) {
+    console.error("Error creating payment intent:", error.message);
+    res.status(500).json({
+      error: error.message,
+      type: error.type,
+      code: error.code,
+    });
+  }
 });
 
-app.listen(process.env.PORT, () =>
-  console.log("Server running on ", process.env.PORT)
+app.listen(process.env.PORT || 3000, () =>
+  console.log("Server running on port", process.env.PORT || 3000)
 );

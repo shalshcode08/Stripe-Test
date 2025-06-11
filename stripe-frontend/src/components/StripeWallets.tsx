@@ -1,73 +1,65 @@
-import {
-  PaymentRequestButtonElement,
-  useStripe,
-} from "@stripe/react-stripe-js";
-import { useEffect, useState } from "react";
+import { useStripe } from "@stripe/react-stripe-js";
+import { useState } from "react";
 
 export const StripeWallets = () => {
   const stripe = useStripe();
-  const [paymentRequest, setPaymentRequest] =
-    useState<stripe.PaymentRequest | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!stripe) return;
+  const fetchClientSecret = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:3000/secret", {
+        method: "GET",
+      });
+      const { clientSecret } = await response.json();
+      console.log(clientSecret);
+      return { clientSecret };
+    } catch (error) {
+      setLoading(false);
+      console.error("Error fetching client secret:", error);
+      throw error;
+    }
+  };
 
-    const pr = stripe.paymentRequest({
-      country: "US",
-      currency: "usd",
-      total: {
-        label: "Demo Total",
-        amount: 999,
-      },
-      requestPayerName: true,
-      requestPayerEmail: true,
-    });
+  const handleWalletClick = async () => {
+    if (!stripe) {
+      console.error("Stripe not loaded");
+      return;
+    }
 
-    pr.canMakePayment().then((result) => {
-      if (result) setPaymentRequest(pr);
-    });
+    try {
+      setLoading(true);
+      const { clientSecret } = await fetchClientSecret();
 
-    pr.on("paymentmethod", async (ev) => {
-      try {
-        const response = await fetch(
-          "http://localhost:3000/create-payment-intent",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ payment_method: ev.paymentMethod.id }),
-          }
-        );
+      const { error } = await stripe.confirmAlipayPayment(clientSecret, {
+        return_url: `${window.location.origin}/success`,
+      });
 
-        const { client_secret } = await response.json();
-
-        const confirmResult = await stripe.confirmCardPayment(client_secret, {
-          payment_method: ev.paymentMethod.id,
-        });
-
-        if (confirmResult.error) {
-          ev.complete("fail");
-          alert("Payment failed: " + confirmResult.error.message);
-        } else {
-          ev.complete("success");
-          window.location.href = "/success";
-        }
-      } catch (error) {
-        ev.complete("fail");
-        alert("Error: " + error);
+      if (error) {
+        setLoading(false);
+        console.error("Payment confirmation failed:", error);
       }
-    });
-  }, [stripe]);
-
-  if (!paymentRequest)
-    return (
-      <p className="text-center text-gray-800 underline">
-        No wallet payment methods available
-      </p>
-    );
+    } catch (err) {
+      console.error("Error during payment:", err);
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="w-[300px]">
-      <PaymentRequestButtonElement options={{ paymentRequest }} />
+    <div className="flex justify-center items-center h-screen">
+      <div
+        className="p-2 border border-orange-600 rounded hover:bg-orange-100 hover:border-orange-300 cursor-pointer flex flex-row items-center px-4 justify-center gap-2 text-center"
+        onClick={handleWalletClick}
+      >
+        {loading ? (
+          <div className="text-sm text-orange-600">Loading...</div>
+        ) : (
+          <>
+            <div>💵</div>
+            <p className="text-sm text-orange-600">Ali Pay</p>
+          </>
+        )}
+      </div>
     </div>
   );
 };

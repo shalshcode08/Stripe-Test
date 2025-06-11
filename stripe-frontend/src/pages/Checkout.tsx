@@ -13,7 +13,7 @@ export const Checkout = () => {
     <div>
       <div className="flex justify-center items-center h-screen">
         <Elements stripe={stripePromise}>
-            <StripeWallets />
+          <StripeWallets />
         </Elements>
       </div>
     </div>
